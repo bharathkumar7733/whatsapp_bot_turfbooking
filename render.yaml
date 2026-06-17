@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: turf-agent
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Set the rest in Render dashboard (sensitive values):
+      # TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_NUMBER
+      # GROQ_API_KEY
+      # TURF_NAME, TURF_LOCATION, TURF_OPEN_HOUR, TURF_CLOSE_HOUR
+      # TURF_PRICE_PER_SLOT, ADVANCE_AMOUNT, UPI_ID
+      # OWNER_NUMBERS
+    disk:
+      name: turf-db
+      mountPath: /data
+      sizeGB: 1
