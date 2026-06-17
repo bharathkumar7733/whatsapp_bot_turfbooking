@@ -17,6 +17,10 @@ import os
 
 logger = logging.getLogger(__name__)
 
+def _db_path() -> str:
+    """Get DB path — respects monkeypatched DB_PATH in tests."""
+    return DB_PATH
+
 DB_PATH = os.environ.get("DB_PATH", "turf.db")
 
 
@@ -24,7 +28,7 @@ DB_PATH = os.environ.get("DB_PATH", "turf.db")
 
 @contextmanager
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(_db_path())
     conn.row_factory = sqlite3.Row          # access columns by name
     conn.execute("PRAGMA journal_mode=WAL") # safe for concurrent reads
     conn.execute("PRAGMA foreign_keys=ON")
@@ -71,7 +75,7 @@ def init_db() -> None:
                 created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
             );
         """)
-    logger.info("DB initialised at %s", DB_PATH)
+    logger.info("DB initialised at %s", _db_path())
 
 
 # ── Booking reference helpers ──────────────────────────────────────────────────

@@ -68,7 +68,7 @@ async def groq_fallback(message: str, phone: str, role: str) -> str:
         client = Groq(api_key=s.groq_api_key)
 
         response = client.chat.completions.create(
-            model="llama3-8b-8192",   # free tier, fast, cheap
+            model="llama-3.1-8b-instant",   # fast, free tier, replaces llama3-8b-8192
             messages=[
                 {"role": "system", "content": _build_system_prompt(role)},
                 {"role": "user",   "content": message},

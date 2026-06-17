@@ -237,7 +237,8 @@ _CUSTOMER_PATTERNS: list[tuple[str, re.Pattern]] = [
     (
         "greeting",
         re.compile(
-            r"^(hi|hello|hey|hlo|hii|namaste|namaskar|hai|sup|yo)\b",
+            r"(^|\s)(hi|hello|hey|hlo|hii|namaste|namaskar|sup|yo)\b"
+            r"|^hai$",
             re.I,
         ),
     ),

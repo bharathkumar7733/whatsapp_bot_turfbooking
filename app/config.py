@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # Owners — raw comma-separated string
     owner_numbers: str = ""
 
+    # Database path (overridable for Render /data disk)
+    db_path: str = "turf.db"
+
     # App
     app_env: str = "development"
 
@@ -35,7 +38,7 @@ class Settings(BaseSettings):
     def is_owner(self, phone: str) -> bool:
         return phone in self.owner_list
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 @lru_cache()
