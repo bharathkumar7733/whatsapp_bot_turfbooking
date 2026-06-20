@@ -30,6 +30,15 @@ class Settings(BaseSettings):
     # App
     app_env: str = "development"
 
+    # Security: Twilio Signature Validation
+    # Defaults to True in production. Set to False only in development.
+    validate_twilio_signature: bool = True
+
+    # Emergency bypass — allows skipping signature validation.
+    # ONLY for emergency recovery. Logs a critical warning whenever used.
+    # Should NEVER be True in normal production operation.
+    allow_signature_bypass: bool = False
+
     @property
     def owner_list(self) -> List[str]:
         """Returns list of owner WhatsApp numbers in whatsapp:+91XXXXXXXXXX format."""

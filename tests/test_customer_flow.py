@@ -32,6 +32,7 @@ def setup(tmp_path, monkeypatch):
     mock_settings.turf_close_hour = 23
     mock_settings.turf_price_per_slot = 600
     mock_settings.owner_list = [OWNER]
+    monkeypatch.setattr("app.config.get_settings", lambda: mock_settings)
     monkeypatch.setattr("app.handlers.customer.get_settings", lambda: mock_settings)
     yield
     sess._sessions.clear()
@@ -40,6 +41,12 @@ def setup(tmp_path, monkeypatch):
 @pytest.fixture
 def mock_send():
     with patch("app.handlers.customer.send_whatsapp_message") as m:
+        yield m
+
+
+@pytest.fixture
+def mock_safe_notify():
+    with patch("app.handlers.customer.safe_notify_owner") as m:
         yield m
 
 
@@ -103,8 +110,8 @@ async def test_full_booking_flow(mock_send):
 
 
 @pytest.mark.asyncio
-async def test_screenshot_notifies_owner(mock_send):
-    """After screenshot is sent, owners get notified."""
+async def test_screenshot_notifies_owner(mock_send, mock_safe_notify):
+    """After screenshot is sent, owner gets notified via safe_notify_owner."""
     # Fast-forward to awaiting_payment state
     sess.set_state(PHONE, "awaiting_payment", {
         "booking_ref": "BK101",
@@ -116,11 +123,14 @@ async def test_screenshot_notifies_owner(mock_send):
     await handle_customer(PHONE, "UTR 123456789012", media_url="https://example.com/ss.jpg")
 
     assert sess.get_state(PHONE) == "done"
-    # Should have sent: owner notify + customer ack
-    assert mock_send.call_count >= 2
-    owner_calls = [c for c in mock_send.call_args_list if c[0][0] == OWNER]
-    assert len(owner_calls) == 1
-    assert "confirm" in owner_calls[0][0][1].lower()
+    # Customer ack sent via send_whatsapp_message
+    assert mock_send.call_count >= 1
+    # Owner notified via safe_notify_owner
+    mock_safe_notify.assert_called_once()
+    owners_arg = mock_safe_notify.call_args[0][0]
+    assert OWNER in owners_arg
+    msg_arg = mock_safe_notify.call_args[0][1]
+    assert "confirm" in msg_arg.lower()
 
 
 # ── Slot taken — shows alternatives ───────────────────────────────────────────

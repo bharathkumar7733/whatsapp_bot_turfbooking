@@ -160,9 +160,9 @@ def extract_time(text: str) -> Optional[str]:
 
 # ── Duration extractor ─────────────────────────────────────────────────────────
 
-def extract_duration(text: str) -> float:
+def extract_duration(text: str) -> Optional[float]:
     """
-    Extract duration in hours from text. Defaults to 1.0.
+    Extract duration in hours from text. Returns None if omitted.
     Handles: "2 hours", "1.5 hrs", "for 2h", "2 ghante"
     """
     t = _clean(text)
@@ -179,7 +179,7 @@ def extract_duration(text: str) -> float:
         diff = end - start
         if 1 <= diff <= 4:
             return float(diff)
-    return 1.0
+    return None
 
 
 # ── Booking ref extractor ──────────────────────────────────────────────────────
@@ -264,8 +264,8 @@ _OWNER_PATTERNS: list[tuple[str, re.Pattern]] = [
     (
         "confirm_payment",
         re.compile(
-            r"\b(confirm|approve|mark\s*paid|payment\s*received|received\s*payment|"
-            r"paid\s*kar\s*do|confirm\s*kar)\b",
+            r"\b(confirm|approve|received|paid|ok\s*confirm|mark\s*paid|"
+            r"payment\s*received|received\s*payment|paid\s*kar\s*do|confirm\s*kar)\b",
             re.I,
         ),
     ),

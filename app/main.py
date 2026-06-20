@@ -3,6 +3,7 @@ Turf Booking WhatsApp Agent — FastAPI entry point.
 
 Hardening:
   - Global exception handler returns a graceful WhatsApp reply instead of 500
+  - Owner alert via safe_notify_owner() on unhandled exceptions
   - Request logging with masked phone numbers
   - Input sanitised before reaching handlers (router.py)
 """
@@ -15,7 +16,7 @@ from fastapi.responses import PlainTextResponse
 
 from .config import get_settings
 from .db import init_db
-from .router import router
+from .router import router, set_scheduler
 from .scheduler import start_scheduler
 
 
@@ -36,13 +37,15 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     settings = get_settings()
     logger.info(
-        "Starting *%s* agent [env=%s, owners=%d]",
+        "Starting *%s* agent [env=%s, owners=%d, sig_validation=%s]",
         settings.turf_name,
         settings.app_env,
         len(settings.owner_list),
+        settings.validate_twilio_signature,
     )
     init_db()
     scheduler = start_scheduler()
+    set_scheduler(scheduler)   # expose to /health endpoint
     yield
     scheduler.shutdown(wait=False)
     logger.info("Agent shut down cleanly.")
@@ -50,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Turf Booking WhatsApp Agent",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
     docs_url=None,    # disable Swagger in prod
     redoc_url=None,
@@ -64,10 +67,12 @@ app.include_router(router)
 async def global_exception_handler(request: Request, exc: Exception):
     """
     Catch any unhandled exception.
-    Attempt to send a graceful WhatsApp reply so the user doesn't get silence.
+    1. Attempt to send a graceful WhatsApp reply to the customer.
+    2. Alert all owners via safe_notify_owner() — never raises.
     """
     logger.exception("Unhandled exception on %s: %s", request.url.path, exc)
 
+    sender = ""
     try:
         form = await request.form()
         sender = str(form.get("From", ""))
@@ -78,7 +83,22 @@ async def global_exception_handler(request: Request, exc: Exception):
                 "Sorry, something went wrong on our end. Please try again in a moment. 🙏",
             )
     except Exception:
-        pass  # best-effort; don't recurse into another exception
+        pass  # best-effort customer reply
+
+    # Alert owners — use safe wrapper so this never causes recursion
+    try:
+        from .twilio_client import safe_notify_owner
+        settings = get_settings()
+        safe_notify_owner(
+            settings.owner_list,
+            f"⚠️ *Booking System Alert*\n\n"
+            f"An error occurred while processing a message.\n"
+            f"Sender: {sender or 'unknown'}\n"
+            f"Error: {str(exc)[:200]}\n\n"
+            f"Please check app.log and call the customer if needed."
+        )
+    except Exception:
+        pass  # never let alert logic crash the handler
 
     return PlainTextResponse(
         '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',

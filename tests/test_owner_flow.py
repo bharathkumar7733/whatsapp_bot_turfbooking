@@ -24,10 +24,15 @@ def setup(tmp_path, monkeypatch):
     mock_settings = MagicMock()
     mock_settings.turf_open_hour = 6
     mock_settings.turf_close_hour = 23
+    mock_settings.turf_price_per_slot = 600
+    mock_settings.advance_amount = 300
+    mock_settings.upi_id = "test@upi"
     mock_settings.owner_list = [OWNER]
+    monkeypatch.setattr("app.config.get_settings", lambda: mock_settings)
     monkeypatch.setattr("app.handlers.owner.get_settings", lambda: mock_settings)
     yield
     sess._sessions.clear()
+
 
 
 @pytest.fixture

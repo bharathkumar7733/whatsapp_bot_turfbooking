@@ -10,8 +10,19 @@ import app.session as session
 PHONE = "whatsapp:+919876543210"
 
 
+import app.db as db
+
 @pytest.fixture(autouse=True)
-def clean_sessions():
+def isolated_db(tmp_path, monkeypatch):
+    """Point DB_PATH to a fresh temp file for every test."""
+    temp_db = str(tmp_path / "test_session.db")
+    monkeypatch.setattr(db, "DB_PATH", temp_db)
+    db.init_db()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def clean_sessions(isolated_db):
     """Wipe session store before every test."""
     session._sessions.clear()
     yield
