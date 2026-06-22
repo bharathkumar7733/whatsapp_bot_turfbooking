@@ -18,7 +18,7 @@ Bot: 📋 Tomorrow 6:00 PM – 9:00 PM (3 hr). What's your name?
 Customer: Ravi Kumar
 Bot: ✅ Booking Created! BK101
      Pay ₹300 advance to owner@upi
-     Send screenshot after payment. Slot holds 5 min ⏳
+     Send screenshot after payment. Slot hold s 5 min ⏳  ,.
 
 Customer: [sends UPI screenshot]
 Bot: 📸 Got it! Owner will confirm within a few hours 🙏
